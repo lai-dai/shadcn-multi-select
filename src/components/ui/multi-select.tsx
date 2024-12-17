@@ -330,7 +330,7 @@ const SelectValue = React.forwardRef<HTMLDivElement, SelectValueProps>(
       <Comp
         {...props}
         className={cn(
-          "flex grow flex-wrap items-center gap-2",
+          "flex grow flex-wrap items-center gap-1",
           placeholder &&
             "before:text-muted-foreground before:content-[attr(data-placeholder)] data-[state=true]:before:hidden",
           className,
