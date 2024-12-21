@@ -1,7 +1,7 @@
-import { Check, ChevronDown, Ellipsis, Loader2, X } from "lucide-react"
+import { Check, ChevronDown, Ellipsis, X } from "lucide-react"
 import React from "react"
+import { ErrorView } from "~/components/error"
 
-import { ErrorMessage } from "~/components/error-message"
 import { Loading } from "~/components/loading"
 import { Badge } from "~/components/ui/badge"
 import { Button } from "~/components/ui/button"
@@ -12,6 +12,7 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
+  CommandSeparator,
 } from "~/components/ui/command"
 import {
   Popover,
@@ -25,6 +26,7 @@ import {
 } from "~/hooks/use-react-select"
 import { cn } from "~/lib/utils"
 
+// utils
 function filterCommand(value: string, search: string, keywords?: string[]) {
   const strKeywords = keywords?.join(", ").toLowerCase() ?? ""
 
@@ -32,6 +34,7 @@ function filterCommand(value: string, search: string, keywords?: string[]) {
   return 0
 }
 
+// Combobox
 export type BaseComboboxProps<V extends SelectValue> = SelectProps<V> & {
   align?: "center" | "end" | "start"
   className?: string
@@ -92,38 +95,55 @@ export function Combobox<
 }: ComboboxProps<V, O>) {
   const [open, setOpen] = React.useState(false)
 
-  const { getSelectItemProps, onSelect, isSelected, selected } = useReactSelect<V>(props)
+  const { getSelectItemProps, onSelect, isSelected, selected } =
+    useReactSelect<V>(props)
 
-  const getFieldName = React.useCallback(
-    function (item: O) {
+  const parseOption = React.useCallback(
+    function (option: O) {
       return {
         label:
           typeof fieldNames.label === "function"
-            ? fieldNames.label(item)
-            : (item[fieldNames.label] ?? ""),
+            ? fieldNames.label(option)
+            : (option[fieldNames.label] ?? ""),
         value:
           typeof fieldNames.value === "function"
-            ? fieldNames.value(item)
-            : (item[fieldNames.value] ?? ""),
+            ? fieldNames.value(option)
+            : (option[fieldNames.value] ?? ""),
       } as {
-        label: string
+        label: React.ReactNode
         value: V
       }
     },
     [fieldNames],
   )
 
-  const getValueForModeSingle = React.useCallback(
-    (item?: O) => {
-      if (item) {
-        return getFieldName(item).label
+  const handleSelect = React.useCallback(
+    (targetOption: ReturnType<typeof parseOption>) => {
+      onSelect(targetOption?.value)
+      // Chế độ chọn nhiều -> Không đóng popover
+      setOpen(props.mode === "multiple")
+      // Lấy toàn bộ giá trị của option
+      if (typeof onAllValueChange === "function") {
+        const allValue = options?.find(opt => {
+          const option = parseOption(opt)
+
+          return option?.value === targetOption?.value
+        })
+        onAllValueChange(allValue)
       }
-      return placeholder
     },
-    [getFieldName, placeholder],
+    [parseOption, onAllValueChange, onSelect, options, props.mode],
   )
 
-  const hasEmpty = isLoading ?? isError ?? false
+  const selectedSingleMode = React.useCallback(
+    (option?: O, defaultValue?: string) => {
+      if (option) {
+        return parseOption(option).label ?? defaultValue
+      }
+      return defaultValue
+    },
+    [parseOption],
+  )
 
   return (
     <Popover
@@ -135,26 +155,27 @@ export function Combobox<
         {TriggerComponent ?? (
           <Button
             className={cn(
-              "flex h-auto min-h-9 w-full justify-between bg-transparent px-3 py-0",
-              props.mode === 'multiple' ? "hover:bg-transparent" : "",
+              "flex h-auto min-h-9 w-full justify-between px-3 py-0 hover:bg-transparent",
               className,
             )}
             aria-expanded={open}
             role={"combobox"}
             variant={"outline"}>
             {props.mode === "single" ? (
-              <span>
-                {getValueForModeSingle(
+              <div>
+                {selectedSingleMode(
                   options?.find(it => {
-                    const item = getFieldName(it)
+                    const item = parseOption(it)
                     return isSelected(item?.value)
                   }),
+                  placeholder,
                 )}
-              </span>
+              </div>
             ) : props.mode === "multiple" ? (
-              !selected || Array.isArray(selected) && selected?.length === 0 ? (
-                <span>{placeholder}</span>
-              ) : Array.isArray(selected) && selected?.length > maxCount ? (
+              !selected ||
+              (Array.isArray(selected) && selected.length === 0) ? (
+                placeholder
+              ) : Array.isArray(selected) && selected.length > maxCount ? (
                 <div className={"-mx-2"}>
                   <Badge
                     className={"max-w-36 gap-1 rounded-full"}
@@ -166,29 +187,27 @@ export function Combobox<
                 </div>
               ) : (
                 <div className={"-mx-2 flex flex-wrap gap-1"}>
-                  {options.map(it => {
-                    const item = getFieldName(it)
-
-                    if (isSelected(item?.value)) {
+                  {options.map(opt => {
+                    const option = parseOption(opt)
+                    if (isSelected(option?.value)) {
                       return (
                         <Badge
-                          className={"max-w-36 gap-1.5 rounded-full pr-1"}
-                          key={item?.value}
-                          title={item?.label}
+                          className={"max-w-36 gap-1 rounded-sm pr-0.5"}
+                          key={option?.value}
                           variant={"outline"}>
-                          <span className={"truncate"}>{item?.label}</span>
+                          <div className={"truncate"}>{option?.label}</div>
 
-                          <span
+                          <div
                             className={
-                              "rounded-xl hover:bg-muted"
+                              "rounded-sm border border-transparent p-px hover:border-border"
                             }
                             onClick={e => {
                               e.stopPropagation()
-                              onSelect(item?.value)
+                              onSelect(option?.value)
                             }}
                             role={"button"}>
                             <X />
-                          </span>
+                          </div>
                         </Badge>
                       )
                     }
@@ -217,72 +236,60 @@ export function Combobox<
           ) : null}
 
           <CommandList>
-            {hasEmpty ? (
-              <CommandEmpty className={"grid place-content-center"}>
+            {hasSearch ? (
+              <CommandEmpty>
                 {isLoading ? (
                   <Loading />
                 ) : isError ? (
-                  <ErrorMessage error={error} />
+                  <ErrorView error={error} />
                 ) : (
-                  <ErrorMessage message={"Không tìm thấy kết quả nào"} />
+                  <ErrorView message={"Không tìm thấy kết quả nào"} />
                 )}
               </CommandEmpty>
             ) : null}
 
             <CommandGroup>
-              {options.map(it => {
-                const item = getFieldName(it)
-
+              {options.map(opt => {
+                const option = parseOption(opt)
                 return (
                   <CommandItem
-                    key={item?.value}
+                    key={option?.value}
                     {...getSelectItemProps({
-                      value: item?.value,
-                      onSelect: () => {
-                        onSelect(item?.value)
-                        setOpen(props.mode === "multiple")
-
-                        if (typeof onAllValueChange === "function") {
-                          const allValue = options?.find(it => {
-                            const item = getFieldName(it)
-
-                            return item?.value === item?.value
-                          })
-
-                          onAllValueChange(allValue)
-                        }
-                      },
+                      value: option?.value,
+                      onSelect: () => handleSelect(option),
                     })}
-                    className={"group/item"}
-                    keywords={item?.label ? [item?.label] : undefined}>
-                    <Check
-                      className={
-                        "size-4 opacity-0 group-data-[state=checked]/item:opacity-100"
-                      }/>
+                    keywords={
+                      typeof option?.label === "string"
+                        ? [option?.label]
+                        : undefined
+                    }
+                    className={"[&[data-state=unchecked]>svg]:opacity-0"}>
+                    <div className={"grow"}>{option?.label}</div>
 
-                    {item?.label}
+                    <Check />
                   </CommandItem>
                 )
               })}
             </CommandGroup>
 
             {hasNextPage ? (
-              <CommandGroup className={"text-center"}>
-                <Button
-                  className={"w-full rounded-sm hover:bg-accent"}
-                  onClick={fetchNextPage}
-                  size={"sm"}
-                  type={"button"}
-                  variant={"ghost"}>
-                  {isFetchingNextPage ? (
-                    <Loader2 className={"animate-spin"} />
-                  ) : (
-                    <Ellipsis />
-                  )}
+              <React.Fragment>
+                <CommandSeparator />
 
-                  {"Tải thêm"}
-                </Button>
-              </CommandGroup>
+                <CommandGroup className={"text-center"}>
+                  <Button
+                    className={"w-full"}
+                    isLoading={isFetchingNextPage}
+                    onClick={fetchNextPage}
+                    size={"sm"}
+                    type={"button"}
+                    variant={"ghost"}>
+                    <Ellipsis />
+
+                    {"Tải thêm"}
+                  </Button>
+                </CommandGroup>
+              </React.Fragment>
             ) : null}
           </CommandList>
         </Command>

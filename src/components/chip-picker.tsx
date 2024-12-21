@@ -1,7 +1,7 @@
-import { Ellipsis, Loader2 } from "lucide-react"
+import { Ellipsis } from "lucide-react"
 import React from "react"
+import { ErrorView } from "~/components/error"
 
-import { ErrorMessage } from "~/components/error-message"
 import { Loading } from "~/components/loading"
 import { Button } from "~/components/ui/button"
 import {
@@ -11,6 +11,7 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
+  CommandSeparator,
 } from "~/components/ui/command"
 import {
   type SelectProps,
@@ -19,6 +20,7 @@ import {
 } from "~/hooks/use-react-select"
 import { cn } from "~/lib/utils"
 
+// utils
 function filterCommand(value: string, search: string, keywords?: string[]) {
   const strKeywords = keywords?.join(", ").toLowerCase() ?? ""
 
@@ -26,6 +28,7 @@ function filterCommand(value: string, search: string, keywords?: string[]) {
   return 0
 }
 
+// Chip Picker
 export type BaseChipPickerProps<V extends SelectValue> = SelectProps<V> & {
   filter?: (value: string, search: string, keywords?: string[]) => number
   hasSearch?: boolean
@@ -76,26 +79,40 @@ export function ChipPicker<
 }: ChipPickerProps<V, O>) {
   const { getSelectItemProps, onSelect } = useReactSelect<V>(props)
 
-  const getFieldName = React.useCallback(
-    function (item: O) {
+  const parseOption = React.useCallback(
+    function (option: O) {
       return {
         label:
           typeof fieldNames.label === "function"
-            ? fieldNames.label(item)
-            : (item[fieldNames.label] ?? ""),
+            ? fieldNames.label(option)
+            : (option[fieldNames.label] ?? ""),
         value:
           typeof fieldNames.value === "function"
-            ? fieldNames.value(item)
-            : (item[fieldNames.value] ?? ""),
+            ? fieldNames.value(option)
+            : (option[fieldNames.value] ?? ""),
       } as {
-        label: string
+        label: React.ReactNode
         value: V
       }
     },
     [fieldNames],
   )
 
-  const hasEmpty = isLoading ?? isError ?? false
+  const handleSelect = React.useCallback(
+    (targetOption: ReturnType<typeof parseOption>) => {
+      onSelect(targetOption?.value)
+      // Lấy toàn bộ giá trị của option
+      if (typeof onAllValueChange === "function") {
+        const allValue = options?.find(opt => {
+          const option = parseOption(opt)
+
+          return option?.value === targetOption?.value
+        })
+        onAllValueChange(allValue)
+      }
+    },
+    [parseOption, onAllValueChange, onSelect, options],
+  )
 
   return (
     <Command
@@ -110,14 +127,14 @@ export function ChipPicker<
       ) : null}
 
       <CommandList>
-        {hasEmpty ? (
-          <CommandEmpty className={"grid place-content-center"}>
+        {hasSearch ? (
+          <CommandEmpty>
             {isLoading ? (
               <Loading />
             ) : isError ? (
-              <ErrorMessage error={error} />
+              <ErrorView error={error} />
             ) : (
-              <ErrorMessage message={"Không tìm thấy kết quả nào"} />
+              <ErrorView message={"Không tìm thấy kết quả nào"} />
             )}
           </CommandEmpty>
         ) : null}
@@ -126,57 +143,48 @@ export function ChipPicker<
           className={cn(
             orientation === "horizontal" ? "*:flex *:flex-wrap *:gap-3" : "",
           )}>
-          {options.map(it => {
-            const item = getFieldName(it)
-
+          {options.map(opt => {
+            const option = parseOption(opt)
             return (
               <CommandItem
-                key={item?.value}
+                key={option?.value}
                 {...getSelectItemProps({
-                  value: item?.value,
-                  onSelect: () => {
-                    onSelect(item?.value)
-
-                    if (typeof onAllValueChange === "function") {
-                      const allValue = options?.find(it => {
-                        const item = getFieldName(it)
-
-                        return item?.value === item?.value
-                      })
-
-                      onAllValueChange(allValue)
-                    }
-                  },
+                  value: option?.value,
+                  onSelect: () => handleSelect(option),
                 })}
                 className={cn(
                   "data-[disabled=true]:pointer-events-none data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground data-[disabled=true]:opacity-50",
-                  orientation === "horizontal" ? "bg-accent" : "",
+                  // orientation === "horizontal" ? "bg-accent" : "",
                 )}
-                keywords={item?.label ? [item?.label] : undefined}
-                title={item?.label}>
-                {item?.label}
+                keywords={
+                  typeof option?.label === "string"
+                    ? [option?.label]
+                    : undefined
+                }>
+                {option?.label}
               </CommandItem>
             )
           })}
         </CommandGroup>
 
         {hasNextPage ? (
-          <CommandGroup className={"text-center"}>
-            <Button
-              className={"w-full rounded-sm hover:bg-accent"}
-              onClick={fetchNextPage}
-              size={"sm"}
-              type={"button"}
-              variant={"ghost"}>
-              {isFetchingNextPage ? (
-                <Loader2 className={"animate-spin"} />
-              ) : (
-                <Ellipsis />
-              )}
+          <React.Fragment>
+            <CommandSeparator />
 
-              {"Tải thêm"}
-            </Button>
-          </CommandGroup>
+            <CommandGroup className={"text-center"}>
+              <Button
+                className={"w-full"}
+                isLoading={isFetchingNextPage}
+                onClick={fetchNextPage}
+                size={"sm"}
+                type={"button"}
+                variant={"ghost"}>
+                <Ellipsis />
+
+                {"Tải thêm"}
+              </Button>
+            </CommandGroup>
+          </React.Fragment>
         ) : null}
       </CommandList>
     </Command>

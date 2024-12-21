@@ -28,7 +28,8 @@ export function ErrorMessage({
     <Alert
       {...props}
       className={cn(
-        variant === "default" && "border-0 bg-transparent",
+        "text-start",
+        variant === "default" ? "border-0 bg-transparent" : "",
         className,
       )}
       variant={variant}>
