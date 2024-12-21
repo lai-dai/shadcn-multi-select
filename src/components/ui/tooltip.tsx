@@ -23,8 +23,7 @@ const TooltipContent = React.forwardRef<
       )}
       ref={ref}
       sideOffset={sideOffset}
-      {...props}
-    />
+      {...props}/>
   </TooltipPrimitive.Portal>
 ))
 TooltipContent.displayName = TooltipPrimitive.Content.displayName

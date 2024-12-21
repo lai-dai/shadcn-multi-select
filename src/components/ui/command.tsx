@@ -18,8 +18,7 @@ const Command = React.forwardRef<
       className,
     )}
     ref={ref}
-    {...props}
-  />
+    {...props}/>
 ))
 Command.displayName = CommandPrimitive.displayName
 
@@ -42,7 +41,9 @@ const CommandInput = React.forwardRef<
   React.ElementRef<typeof CommandPrimitive.Input>,
   React.ComponentPropsWithoutRef<typeof CommandPrimitive.Input>
 >(({ className, ...props }, ref) => (
-  <div className={"flex items-center border-b px-3"} cmdk-input-wrapper={""}>
+  <div
+    className={"flex items-center border-b px-3"}
+    cmdk-input-wrapper={""}>
     <Search className={"mr-2 h-4 w-4 shrink-0 opacity-50"} />
 
     <CommandPrimitive.Input
@@ -51,8 +52,7 @@ const CommandInput = React.forwardRef<
         className,
       )}
       ref={ref}
-      {...props}
-    />
+      {...props}/>
   </div>
 ))
 
@@ -65,8 +65,7 @@ const CommandList = React.forwardRef<
   <CommandPrimitive.List
     className={cn("max-h-[300px] overflow-y-auto overflow-x-hidden", className)}
     ref={ref}
-    {...props}
-  />
+    {...props}/>
 ))
 
 CommandList.displayName = CommandPrimitive.List.displayName
@@ -78,8 +77,7 @@ const CommandEmpty = React.forwardRef<
   <CommandPrimitive.Empty
     className={"py-6 text-center text-sm"}
     ref={ref}
-    {...props}
-  />
+    {...props}/>
 ))
 
 CommandEmpty.displayName = CommandPrimitive.Empty.displayName
@@ -94,8 +92,7 @@ const CommandGroup = React.forwardRef<
       className,
     )}
     ref={ref}
-    {...props}
-  />
+    {...props}/>
 ))
 
 CommandGroup.displayName = CommandPrimitive.Group.displayName
@@ -107,8 +104,7 @@ const CommandSeparator = React.forwardRef<
   <CommandPrimitive.Separator
     className={cn("-mx-1 h-px bg-border", className)}
     ref={ref}
-    {...props}
-  />
+    {...props}/>
 ))
 CommandSeparator.displayName = CommandPrimitive.Separator.displayName
 
@@ -122,8 +118,7 @@ const CommandItem = React.forwardRef<
       className,
     )}
     ref={ref}
-    {...props}
-  />
+    {...props}/>
 ))
 
 CommandItem.displayName = CommandPrimitive.Item.displayName
@@ -138,8 +133,7 @@ const CommandShortcut = ({
         "ml-auto text-xs tracking-widest text-muted-foreground",
         className,
       )}
-      {...props}
-    />
+      {...props}/>
   )
 }
 CommandShortcut.displayName = "CommandShortcut"

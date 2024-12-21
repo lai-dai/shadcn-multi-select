@@ -37,12 +37,14 @@ export function ComponentPreview({
       return (
         <p className={"text-sm text-muted-foreground"}>
           {"Component"}{" "}
+
           <code
             className={
               "relative rounded bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm"
             }>
             {name}
           </code>{" "}
+
           {"not found in registry."}
         </p>
       )
@@ -55,7 +57,9 @@ export function ComponentPreview({
     <div
       className={cn("group relative my-4 flex flex-col space-y-2", className)}
       {...props}>
-      <Tabs className={"relative mr-auto w-full"} defaultValue={"preview"}>
+      <Tabs
+        className={"relative mr-auto w-full"}
+        defaultValue={"preview"}>
         <div className={"flex items-center justify-between pb-3"}>
           {!hideCode && (
             <TabsList
@@ -81,7 +85,9 @@ export function ComponentPreview({
           )}
         </div>
 
-        <TabsContent className={"relative rounded-md border"} value={"preview"}>
+        <TabsContent
+          className={"relative rounded-md border"}
+          value={"preview"}>
           <div
             className={cn(
               "preview flex min-h-[350px] w-full justify-center p-10",

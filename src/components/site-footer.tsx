@@ -15,6 +15,7 @@ export function SiteFooter() {
             "text-balance text-center text-sm leading-loose text-muted-foreground md:text-left"
           }>
           {"Built by"}{" "}
+
           <a
             className={"font-medium underline underline-offset-4"}
             href={siteConfig.links.site}
@@ -22,7 +23,9 @@ export function SiteFooter() {
             target={"_blank"}>
             {"laidai"}
           </a>
+
           {". The source code is available on"}{" "}
+
           <a
             className={"font-medium underline underline-offset-4"}
             href={siteConfig.links.github}
@@ -30,6 +33,7 @@ export function SiteFooter() {
             target={"_blank"}>
             {"GitHub"}
           </a>
+
           {"."}
         </p>
       </div>

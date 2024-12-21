@@ -1,6 +1,6 @@
 import { type MetadataRoute } from "next"
 import { siteConfig } from "~/config/site"
-import { GetAllPosts } from "~/lib/posts"
+// import { GetAllPosts } from "~/lib/posts"
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const lastModified = new Date().toISOString().split("T")[0]
@@ -18,11 +18,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     lastModified,
   }))
 
-  const posts = GetAllPosts()
-  const postPaths = posts.map(post => ({
-    url: `${siteConfig.url}/posts/${post.slug}`,
-    lastModified: new Date(post.data.lastUpdate).toISOString().split("T")[0],
-  }))
+  return staticPaths
 
-  return [...staticPaths, ...postPaths]
+  // const posts = GetAllPosts()
+  // const postPaths = posts.map(post => ({
+  //   url: `${siteConfig.url}/posts/${post.slug}`,
+  //   lastModified: new Date(post.data.lastUpdate).toISOString().split("T")[0],
+  // }))
+
+  // return [...staticPaths, ...postPaths]
 }

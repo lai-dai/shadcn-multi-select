@@ -25,8 +25,7 @@ const SheetOverlay = React.forwardRef<
       className,
     )}
     {...props}
-    ref={ref}
-  />
+    ref={ref}/>
 ))
 SheetOverlay.displayName = SheetPrimitive.Overlay.displayName
 
@@ -88,8 +87,7 @@ const SheetHeader = ({
       "flex flex-col space-y-2 text-center sm:text-left",
       className,
     )}
-    {...props}
-  />
+    {...props}/>
 )
 SheetHeader.displayName = "SheetHeader"
 
@@ -102,8 +100,7 @@ const SheetFooter = ({
       "flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2",
       className,
     )}
-    {...props}
-  />
+    {...props}/>
 )
 SheetFooter.displayName = "SheetFooter"
 
@@ -114,8 +111,7 @@ const SheetTitle = React.forwardRef<
   <SheetPrimitive.Title
     className={cn("text-lg font-semibold text-foreground", className)}
     ref={ref}
-    {...props}
-  />
+    {...props}/>
 ))
 SheetTitle.displayName = SheetPrimitive.Title.displayName
 
@@ -126,8 +122,7 @@ const SheetDescription = React.forwardRef<
   <SheetPrimitive.Description
     className={cn("text-sm text-muted-foreground", className)}
     ref={ref}
-    {...props}
-  />
+    {...props}/>
 ))
 SheetDescription.displayName = SheetPrimitive.Description.displayName
 
