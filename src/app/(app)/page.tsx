@@ -1,6 +1,7 @@
 "use client"
 
-import { Command, CommandItem, CommandList } from "~/components/ui/command"
+import { ChipPicker } from "~/components/chip-picker"
+import { Combobox } from "~/components/combobox"
 import {
   Select,
   SelectContent,
@@ -8,47 +9,37 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select"
-import { useReactSelect } from "~/hooks/use-react-select"
 
-const options = [
+const Options = [
   {
     label: "text 1",
-    value: "1",
+    value: 1,
   },
   {
     label: "text 2",
-    value: "2",
+    value: 2,
+  },
+  {
+    label: "text 3",
+    value: 3,
   },
 ]
 
 export default function HomePage() {
-  const { getSelectItemProps, onSelect } = useReactSelect({
-    mode: "single",
-    required: true,
-  })
-
   return (
-    <div>
-      <Command>
-        <CommandList>
-          {options.map(({ label, value }) => (
-            <CommandItem
-              key={value}
-              {...getSelectItemProps({
-                value,
-                onSelect: value => onSelect(value),
-              })}
-              className={
-                "data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50"
-              }>
-              {label}
-            </CommandItem>
-          ))}
-        </CommandList>
-      </Command>
+    <div className={"space-y-3 mx-auto container max-w-xl p-9"}>
+      <Combobox
+        mode={"single"}
+        options={Options}
+        placeholder={"Theme"}/>
+
+      <Combobox
+        mode={"multiple"}
+        options={Options}
+        placeholder={"Theme"}/>
 
       <Select>
-        <SelectTrigger className={"w-[180px]"}>
+        <SelectTrigger>
           <SelectValue placeholder={"Theme"} />
         </SelectTrigger>
 
@@ -60,6 +51,12 @@ export default function HomePage() {
           <SelectItem value={"system"}>{"System"}</SelectItem>
         </SelectContent>
       </Select>
+
+      <div className={"bg-accent/30 inline-flex"}>
+        <ChipPicker
+          mode={"single"}
+          options={Options}/>
+      </div>
     </div>
   )
 }

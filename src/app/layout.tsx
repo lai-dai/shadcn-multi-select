@@ -20,6 +20,8 @@ export const metadata: Metadata = {
     "Radix UI",
     "Shadcn UI",
     "T3 App",
+    "Multi select",
+    "Shadcn multi select"
   ],
   authors: [
     {
