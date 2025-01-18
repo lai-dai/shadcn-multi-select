@@ -50,6 +50,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       size,
       asChild = false,
       isLoading = false,
+      disabled,
       children,
       ...props
     },
@@ -59,14 +60,12 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <Comp
         className={cn(buttonVariants({ variant, size, className }))}
+        disabled={disabled ?? isLoading}
         ref={ref}
         {...props}>
         {isLoading ? (
-          <Loader2
-            className={
-              "animate-spin [&+svg]:hidden"
-            }/>
-        ): null}
+          <Loader2 className={"animate-spin [&+svg]:hidden"} />
+        ) : null}
 
         <Slottable>{children}</Slottable>
       </Comp>

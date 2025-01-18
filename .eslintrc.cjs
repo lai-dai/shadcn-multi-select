@@ -92,7 +92,8 @@ const config = {
       }
     ],
     "react/jsx-closing-bracket-location": [
-      1, "after-props"
+      1, 'tag-aligned',
+      1, 'line-aligned',
     ],
     "react/jsx-curly-brace-presence": [
       "error", "always"

@@ -1,83 +1,65 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
 // This code comes from https://github.com/radix-ui/primitives/blob/main/packages/react/use-controllable-state/src/useControllableState.tsx
 
 import React from "react"
+import { useCallbackRef } from "~/hooks/use-callback-ref"
 
+// eslint-disable-next-line @typescript-eslint/no-empty-function
 const noop = () => {}
+const isShouldUpdate = <T>(prev: T, next: T) => prev !== next
 
-type UseControllableStateParams<T> = {
-  prop?: T | undefined
-  defaultProp?: T | undefined
+export type UseControllableStateProps<T> = {
+  prop?: T
+  defaultProp?: T | (() => T)
   onChange?: (state: T) => void
+  shouldUpdate?: (prev: T, next: T) => boolean
 }
 
-type SetStateFn<T> = (prevState?: T) => T
+export type UseControllableStateReturn<T> = [T, React.Dispatch<React.SetStateAction<T>>]
 
-function useCallbackRef<T extends (...args: unknown[]) => unknown>(
-  callback: T | undefined,
-): T {
-  const callbackRef = React.useRef(callback)
+export function useControllableState<T>(props: UseControllableStateProps<T>): UseControllableStateReturn<T> {
+  const {
+    prop, defaultProp, onChange = noop, shouldUpdate = isShouldUpdate,
+  } = props
 
-  React.useEffect(() => {
-    callbackRef.current = callback
-  })
+  const onChangeProp = useCallbackRef(onChange)
+  const shouldUpdateProp = useCallbackRef(shouldUpdate)
 
-  // https://github.com/facebook/react/issues/19240
-  return React.useMemo(
-    () => ((...args) => callbackRef.current?.(...args)) as T,
-    [],
-  )
-}
+  const [
+    uncontrolledProp,
+    setUncontrolledProp,
+  ] = React.useState(defaultProp as T,)
 
-function useUncontrolledState<T>({
-  defaultProp,
-  onChange,
-}: Omit<UseControllableStateParams<T>, "prop">) {
-  const uncontrolledState = React.useState<T | undefined>(defaultProp)
-  const [value] = uncontrolledState
-  const prevValueRef = React.useRef(value)
-  const handleChange = useCallbackRef(
-    onChange as (...args: unknown[]) => unknown,
-  )
-
-  React.useEffect(() => {
-    if (prevValueRef.current !== value) {
-      handleChange(value as T)
-      prevValueRef.current = value
-    }
-  }, [value, prevValueRef, handleChange])
-
-  return uncontrolledState
-}
-export function useControllableState<T>({
-  prop,
-  defaultProp,
-  onChange = noop,
-}: UseControllableStateParams<T>) {
-  const [uncontrolledProp, setUncontrolledProp] = useUncontrolledState({
-    defaultProp,
-    onChange,
-  })
   const isControlled = prop !== undefined
-  const value = (isControlled ? prop : uncontrolledProp) as T
-  const handleChange = useCallbackRef(
-    onChange as (...args: unknown[]) => unknown,
+  const value = isControlled ? prop : uncontrolledProp
+
+  const setValue = React.useCallback(
+    (next: React.SetStateAction<T>) => {
+      const prevState = value
+      const setter = next as (prevState?: T) => T
+      const nextValue = next instanceof Function ? setter(prevState) : next
+
+      if (!shouldUpdateProp(
+        prevState, nextValue
+      )) {
+        return
+      }
+
+      if (!isControlled) {
+        setUncontrolledProp(nextValue)
+      }
+
+      onChangeProp(nextValue)
+    },
+    [
+      isControlled,
+      onChangeProp,
+      shouldUpdateProp,
+      value,
+    ],
   )
 
-  const setValue: React.Dispatch<React.SetStateAction<T | undefined>> =
-    React.useCallback(
-      nextValue => {
-        if (isControlled) {
-          const setter = nextValue as SetStateFn<T>
-          const value =
-            typeof nextValue === "function" ? setter(prop) : nextValue
-          if (value !== prop) handleChange(value as T)
-        } else {
-          setUncontrolledProp(nextValue)
-        }
-      },
-      [isControlled, prop, setUncontrolledProp, handleChange],
-    )
-
-  return [value, setValue] as const
+  return [
+    value,
+    setValue,
+  ]
 }
