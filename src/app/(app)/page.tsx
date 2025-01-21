@@ -1,18 +1,6 @@
 "use client"
 
-import { Download, Save } from "lucide-react"
-import Link from "next/link"
-import { ChipPicker } from "~/components/chip-picker"
 import { ChipPicker as ChipPicker2 } from "~/components/chip-picker-2"
-import { Combobox } from "~/components/combobox"
-import { Button } from "~/components/ui/button"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "~/components/ui/select"
 
 const Options = [
   {
@@ -59,18 +47,31 @@ const Options3 = [
 
 const groupOptions = [
   {
-    // heading: "Heading 1",
+    heading: "Heading 1",
     options: Options,
   },
   {
-    // heading: "Heading 2",
+    heading: "Heading 2",
     options: [
       ...Options2,
       {
-        // heading: "Heading 2-1",
+        heading: "Heading 2-1",
         options: Options3,
       },
     ],
+  },
+]
+
+const otherOption = [
+  {
+    _id: 1,
+    title: "test",
+    desc: "test",
+  },
+  {
+    _id: 2,
+    title: "test 2",
+    desc: "test",
   },
 ]
 
@@ -79,69 +80,17 @@ export default function HomePage() {
     <div className={"container mx-auto max-w-xl space-y-3 p-9"}>
       <div className={"py-9"}>
         <div className={"flex"}>
-          <div className={"border"}>
-            <ChipPicker2 mode={"multiple"} options={groupOptions} />
-          </div>
+          <ChipPicker2
+            // fieldNames={{
+            //   label: option => (
+            //     <div className={"abs"}>{option.title}</div>
+            //   ),
+            //   value: '_id',
+            // }}
+            groupOptions={groupOptions}
+            mode={"multiple"}
+          />
         </div>
-      </div>
-
-      <Button asChild={true} isLoading={true}>
-        <Link href={"/"}>
-          <Download />
-
-          {"Button"}
-
-          <Save />
-        </Link>
-      </Button>
-
-      <Button isLoading={true} size={"icon"}>
-        <Save />
-      </Button>
-
-      <Button isLoading={true} variant={"destructive"}>
-        {"Button"}
-      </Button>
-
-      <Button isLoading={true} variant={"ghost"}>
-        {"Button"}
-      </Button>
-
-      <Button isLoading={true} variant={"outline"}>
-        {"Button"}
-      </Button>
-
-      <Combobox
-        hasNextPage={true}
-        hasSearch={true}
-        mode={"single"}
-        options={Options}
-        placeholder={"Theme"}
-      />
-
-      <Combobox
-        mode={"single"}
-        options={Options}
-        placeholder={"Theme"}
-        required={true}
-      />
-
-      <Select>
-        <SelectTrigger>
-          <SelectValue placeholder={"Theme"} />
-        </SelectTrigger>
-
-        <SelectContent>
-          <SelectItem value={"light"}>{"Light"}</SelectItem>
-
-          <SelectItem value={"dark"}>{"Dark"}</SelectItem>
-
-          <SelectItem value={"system"}>{"System"}</SelectItem>
-        </SelectContent>
-      </Select>
-
-      <div className={"inline-flex bg-accent/30"}>
-        <ChipPicker mode={"single"} options={Options} />
       </div>
     </div>
   )

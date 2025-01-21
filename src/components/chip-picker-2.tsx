@@ -113,7 +113,7 @@ export type ChipPickerProps<
   groupOptions?: GroupOptions<O>[]
 
   renderItem?: (
-    option: O,
+    option: Exclude<O, GroupOptions<O>>,
     ctx: ReturnSelect<V, SelectProps<V>>,
   ) => React.ReactNode
   renderHeading?: (
@@ -284,19 +284,18 @@ export function ChipPicker<
 
     return (
       <ChipListGroup
-        headingProps={{
-          onSelect: handleHeadingSelect,
-        }}
         className={cn(classNames?.group)}
         groupOption={groupOption}
         key={idx}
+        onSelectGroup={handleHeadingSelect}
         reactSelect={selectCtx}
-        renderHeading={renderHeading}>
+        renderHeading={renderHeading}
+      >
         {option => {
           const select = parseOption(option)
 
           return (
-            <ChipItem
+            <Item
               {...getSelectItemProps({
                 disabled: select.disabled,
                 onSelect: () => {
@@ -308,25 +307,26 @@ export function ChipPicker<
                 typeof select.label === "string" ? [select.label] : undefined
               }
               className={cn(classNames?.item)}
-              key={select.value}>
+              key={select.value}
+            >
               {renderItem instanceof Function ? (
-                renderItem(option, selectCtx)
+                renderItem(option as Exclude<O, GroupOptions<O>>, selectCtx)
               ) : (
-                <div className="flex items-center gap-3">
+                <div className={"flex items-center gap-3"}>
                   {selectProps.mode === "multiple" ? (
-                    <ItemIndicatorMultiple />
+                    <MultipleItemIndicator />
                   ) : null}
 
-                  <span className={"flex-1"}>{select?.label}</span>
+                  <div className={"flex-1"}>{select?.label}</div>
 
                   {selectProps.mode === "single" ? (
-                    <ItemIndicatorSingle>
+                    <SingleItemIndicator>
                       <CheckIcon />
-                    </ItemIndicatorSingle>
+                    </SingleItemIndicator>
                   ) : null}
                 </div>
               )}
-            </ChipItem>
+            </Item>
           )
         }}
       </ChipListGroup>
@@ -334,7 +334,7 @@ export function ChipPicker<
   })
 
   return (
-    <ChipProvider
+    <Provider
       value={{
         filter,
         shouldFilter,
@@ -345,39 +345,49 @@ export function ChipPicker<
       className={cn(classNames?.root, className)}
       defaultSearch={defaultSearch}
       onSearchChange={onSearchChange}
-      search={search}>
+      search={search}
+    >
       {hasSearch ? (
-        <ChipSearch>
-          <Search className={"mr-2 h-4 w-4 shrink-0 opacity-50"} />
+        <div
+          className={
+            "flex items-center gap-3 border-b px-2 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0"
+          }
+          aria-label={"search"}
+        >
+          <Search className={"opacity-50"} />
 
-          <ChipInput placeholder={"Tìm kiếm"} />
-        </ChipSearch>
+          <Input placeholder={"Tìm kiếm"} />
+        </div>
       ) : null}
 
-      <ChipList className={cn(classNames?.list)}>
+      <List className={cn(classNames?.list)}>
         {hasEmpty ? (
-          <ChipEmpty className={cn(classNames?.empty)}>{empty}</ChipEmpty>
+          <Empty className={cn(classNames?.empty)}>{empty}</Empty>
         ) : null}
 
         {listGroups}
 
         {hasNextPage ? (
-          <div aria-label={"c-next-page"} className={"border-t p-1"}>
+          <div
+            aria-label={"c-next-page"}
+            className={"border-t p-1"}
+          >
             <Button
               className={"w-full"}
+              isLoading={isFetchingNextPage}
+              onClick={fetchNextPage}
               size={"sm"}
               type={"button"}
               variant={"ghost"}
-              isLoading={isFetchingNextPage}
-              onClick={fetchNextPage}>
+            >
               <ChevronsDown />
 
               {"Tải thêm"}
             </Button>
           </div>
         ) : null}
-      </ChipList>
-    </ChipProvider>
+      </List>
+    </Provider>
   )
 }
 
@@ -392,50 +402,53 @@ interface ChipListGroupProps<
     ctx: ReturnSelect<V, SelectProps<V>>,
   ) => React.ReactNode
   reactSelect: ReturnSelect<V, SelectProps<V>>
-  headingProps?: ChipGroupHeadingProps<V>
   classNames?: Partial<{
     root: string
     heading: string
     group: string
   }>
   className?: string
+  onSelectGroup?: (values: V[], state: boolean | "indeterminate") => void
 }
 
 function ChipListGroup<
   V extends SelectValue,
   O extends Record<string, unknown>,
->({
-  groupOption,
-  reactSelect,
-  renderHeading,
-  headingProps,
-  classNames,
-  className,
-  ...props
-}: ChipListGroupProps<V, O>) {
+>(props: ChipListGroupProps<V, O>) {
+  const {
+    groupOption,
+    reactSelect,
+    renderHeading,
+    classNames,
+    className,
+    children,
+    onSelectGroup,
+  } = props
+
+  const ctx = useChipPicker()
+
   const heading =
     renderHeading instanceof Function
       ? renderHeading(groupOption, reactSelect)
       : groupOption.heading
 
   return (
-    <ChipGroup className={cn(classNames?.root)}>
+    <Group className={cn(classNames?.root)}>
       {heading ? (
-        <ChipGroupHeading {...headingProps} className={cn(classNames?.heading)}>
+        <GroupHeading className={cn(classNames?.heading)}>
+          {ctx.mode === "multiple" && ctx.hasToggleGroup ? (
+            <GroupIndicator onSelect={onSelectGroup} />
+          ) : null}
+
           {heading}
-        </ChipGroupHeading>
+        </GroupHeading>
       ) : null}
 
       <div
-        className={cn(
-          heading
-            ? "relative p-1 pl-2 pt-0 after:absolute after:bottom-0 after:left-2 after:top-0 after:border-l after:border-muted"
-            : "",
-          classNames?.group,
-          className,
-        )}
         aria-label={"group-items"}
-        role={"group"}>
+        className={cn(classNames?.group, className)}
+        role={"group"}
+      >
         {groupOption.options.map((option, idx) => {
           if ("heading" in option || "options" in option) {
             const subGroupOption = option as GroupOptions<O>
@@ -445,28 +458,25 @@ function ChipListGroup<
                 classNames={{
                   group: "pr-0",
                 }}
+                {...props}
                 groupOption={subGroupOption}
                 key={idx}
-                reactSelect={reactSelect}
-                {...props}
               />
             )
           }
 
           return (
             <React.Fragment key={idx}>
-              {props.children instanceof Function
-                ? props.children(option)
-                : props.children}
+              {children instanceof Function ? children(option) : children}
             </React.Fragment>
           )
         })}
       </div>
-    </ChipGroup>
+    </Group>
   )
 }
 
-interface ChipProviderProps extends React.HtmlHTMLAttributes<HTMLDivElement> {
+interface ProviderProps extends React.HtmlHTMLAttributes<HTMLDivElement> {
   defaultSearch?: string
   search?: string
   onSearchChange?: (search: string) => void
@@ -476,13 +486,13 @@ interface ChipProviderProps extends React.HtmlHTMLAttributes<HTMLDivElement> {
   >
 }
 
-function ChipProvider({
+function Provider({
   defaultSearch,
   search,
   onSearchChange,
   value,
   ...props
-}: ChipProviderProps) {
+}: ProviderProps) {
   const [searchValue, setSearchValue] = useControllableState({
     defaultProp: defaultSearch,
     prop: search,
@@ -500,26 +510,17 @@ function ChipProvider({
         listId,
         inputId,
         ...value,
-      }}>
-      <div aria-label={"chip-picker"} {...props} />
+      }}
+    >
+      <div
+        aria-label={"chip-picker"}
+        {...props}
+      />
     </ChipPickerContext.Provider>
   )
 }
 
-function ChipSearch({
-  className,
-  ...props
-}: React.HtmlHTMLAttributes<HTMLDivElement>) {
-  return (
-    <div
-      aria-label={"search"}
-      className={cn("flex items-center border-b px-3", className)}
-      {...props}
-    />
-  )
-}
-
-const ChipInput = React.forwardRef<
+const Input = React.forwardRef<
   HTMLInputElement,
   React.InputHTMLAttributes<HTMLInputElement>
 >(({ className, ...props }, ref) => {
@@ -548,9 +549,9 @@ const ChipInput = React.forwardRef<
     />
   )
 })
-ChipInput.displayName = "ChipInput"
+Input.displayName = "ChipInput"
 
-function ChipList({
+function List({
   className,
   ...props
 }: React.HtmlHTMLAttributes<HTMLDivElement>) {
@@ -572,7 +573,7 @@ function ChipList({
   )
 }
 
-function ChipEmpty({
+function Empty({
   className,
   ...props
 }: React.HtmlHTMLAttributes<HTMLDivElement>) {
@@ -587,7 +588,7 @@ function ChipEmpty({
   )
 }
 
-function ChipGroup({
+function Group({
   className,
   ...props
 }: React.HtmlHTMLAttributes<HTMLDivElement>) {
@@ -604,19 +605,33 @@ function ChipGroup({
   )
 }
 
-interface ChipGroupHeadingProps<V extends SelectValue>
+function GroupHeading({
+  className,
+  ...props
+}: React.HtmlHTMLAttributes<HTMLDivElement>) {
+  return (
+    <div
+      className={cn(
+        "flex items-center gap-3 px-2 py-1.5 text-xs font-medium text-muted-foreground",
+        className,
+      )}
+      aria-hidden={true}
+      aria-label={"group-heading"}
+      {...props}
+    />
+  )
+}
+
+interface GroupIndicatorProps<V extends SelectValue>
   extends Omit<React.HtmlHTMLAttributes<HTMLDivElement>, "onSelect"> {
   onSelect?: (values: V[], state: boolean | "indeterminate") => void
 }
 
-function ChipGroupHeading<V extends SelectValue>({
+function GroupIndicator<V extends SelectValue>({
   className,
-  children,
   onSelect,
   ...props
-}: ChipGroupHeadingProps<V>) {
-  const ctx = useChipPicker()
-
+}: GroupIndicatorProps<V>) {
   const onSelectProp = useCallbackRef(onSelect)
 
   const handleSelect = React.useCallback<
@@ -667,40 +682,31 @@ function ChipGroupHeading<V extends SelectValue>({
   return (
     <div
       className={cn(
-        "flex items-center gap-3 px-2.5 py-1.5 text-xs font-medium text-muted-foreground",
+        "grid size-4 cursor-pointer place-content-center rounded-sm border hover:bg-muted",
         className,
       )}
-      aria-hidden={true}
-      aria-label={"group-heading"}
-      {...props}>
-      {ctx.mode === "multiple" && ctx.hasToggleGroup ? (
-        <div
-          className={
-            "grid size-4 cursor-pointer place-content-center rounded-sm border hover:bg-muted"
-          }
-          aria-label={"chip-toggle-group"}
-          onClick={handleSelect}
-          role={"presentation"}>
-          <div
-            className={
-              "c-heading-checked mb-px hidden h-2 w-1 rotate-45 border-b-2 border-r-2 border-solid border-current"
-            }
-            aria-label={"check-icon"}
-          />
+      aria-checked={"mixed"}
+      aria-label={"chip-toggle-group"}
+      onClick={handleSelect}
+      role={"checkbox"}
+      {...props}
+    >
+      <div
+        className={
+          "c-heading-checked mb-px hidden h-2 w-1 rotate-45 border-b-2 border-r-2 border-solid border-current"
+        }
+        aria-label={"checked-icon"}
+      />
 
-          <div
-            aria-label={"dash-icon"}
-            className={"c-heading-indeterminate h-0.5 w-2 bg-current"}
-          />
-        </div>
-      ) : null}
-
-      {children}
+      <div
+        aria-label={"indeterminate-icon"}
+        className={"c-heading-indeterminate h-0.5 w-2 bg-current"}
+      />
     </div>
   )
 }
 
-interface ChipItemProps
+interface ItemProps
   extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "onSelect"> {
   classNames?: Partial<{
     root: string
@@ -712,7 +718,7 @@ interface ChipItemProps
   onSelect?: (value: string, event: React.ChangeEvent<HTMLInputElement>) => void
 }
 
-function ChipItem({
+function Item({
   className,
   classNames,
   children,
@@ -720,7 +726,7 @@ function ChipItem({
   keywords,
   onSelect,
   ...props
-}: ChipItemProps) {
+}: ItemProps) {
   const ctx = useChipPicker()
 
   const onSelectProp = useCallbackRef(onSelect)
@@ -742,7 +748,8 @@ function ChipItem({
       aria-selected={props.checked ?? false}
       className={cn("c-item", classNames?.root)}
       id={`c-option-${id}`}
-      role={"option"}>
+      role={"option"}
+    >
       <input
         onChange={event => {
           event.stopPropagation()
@@ -757,21 +764,22 @@ function ChipItem({
 
       <label
         className={cn(
-          "block rounded-sm border-2 border-transparent px-2 py-1.5 text-sm outline-none hover:bg-muted/50 peer-disabled:pointer-events-none peer-disabled:opacity-50 peer-checked:[&_.c-indicator]:opacity-100 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+          "block rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-muted/50 peer-disabled:pointer-events-none peer-disabled:opacity-50 peer-checked:[&_.c-indicator]:opacity-100 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
           ctx.mode === "multiple"
             ? ""
             : "peer-checked:bg-accent peer-checked:text-accent-foreground",
           classNames?.label,
           className,
         )}
-        htmlFor={`c-item-${id}`}>
+        htmlFor={`c-item-${id}`}
+      >
         {children}
       </label>
     </div>
   )
 }
 
-function ItemIndicatorMultiple({
+function MultipleItemIndicator({
   className,
   ...props
 }: React.HtmlHTMLAttributes<HTMLDivElement>) {
@@ -783,7 +791,8 @@ function ItemIndicatorMultiple({
       )}
       aria-label={"indicator-multiple"}
       role={"presentation"}
-      {...props}>
+      {...props}
+    >
       <div
         className={
           "c-indicator mb-px h-2 w-1 rotate-45 border-b-2 border-r-2 border-solid border-current opacity-0"
@@ -794,7 +803,7 @@ function ItemIndicatorMultiple({
   )
 }
 
-function ItemIndicatorSingle({
+function SingleItemIndicator({
   className,
   ...props
 }: React.HtmlHTMLAttributes<HTMLDivElement>) {
